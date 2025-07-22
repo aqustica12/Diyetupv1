@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
+const microtime = require('microtime');
 
 // PayTR callback
 router.post('/callback', (req, res) => {
@@ -47,67 +48,93 @@ router.post('/create-token', (req, res) => {
         merchant_salt: merchant_salt.substring(0, 10) + '...'
     });
     
-    const merchant_oid = Date.now().toString();
+    // PayTR örneğine göre düzeltilmiş kod
+    const merchant_oid = "IN" + microtime.now(); // Sipariş numarası
     const email = 'test@diyetup.com';
     const payment_amount = amount * 100; // Kuruş cinsinden
     
-    const user_basket = JSON.stringify([
-        {
-            "name": "DiyetUp Paket",
-            "price": payment_amount,
-            "quantity": 1
-        }
+    // PayTR örneğine göre basket formatı
+    const basket = JSON.stringify([
+        ['DiyetUp Paket', (payment_amount / 100).toString(), 1]
     ]);
     
-    const user_ip = req.ip || '127.0.0.1';
+    // Base64 encode (nodejs-base64-converter kullanılmalı ama şimdilik Buffer kullanıyoruz)
+    const user_basket = Buffer.from(basket).toString('base64');
+    
+    const user_ip = '45.141.151.100'; // VPS IP'si
     const timeout_limit = 30;
     const debug_on = 1;
-    const test_mode = 0; // Canlı mod için 0
+    const test_mode = 1; // Test modu
     const no_installment = 0;
     const max_installment = 0;
     const currency = "TL";
     const lang = "tr";
+    const user_name = "DiyetUp User";
+    const user_address = "Turkey";
+    const user_phone = "5551234567";
+    const merchant_ok_url = "https://diyetup.com/payment/success";
+    const merchant_fail_url = "https://diyetup.com/payment/error";
     
-    const hash_str = merchant_id + user_ip + merchant_oid + email + payment_amount + user_basket + no_installment + max_installment + currency + test_mode;
-    const paytr_token = crypto.createHmac('sha256', merchant_salt).update(hash_str).digest('base64');
+    // PayTR örneğine göre hash hesaplama
+    const hashSTR = `${merchant_id}${user_ip}${merchant_oid}${email}${payment_amount}${user_basket}${no_installment}${max_installment}${currency}${test_mode}`;
+    const paytr_token = hashSTR + merchant_salt;
+    const token = crypto.createHmac('sha256', merchant_key).update(paytr_token).digest('base64');
     
+    console.log('Hash String:', hashSTR);
+    console.log('PayTR Token:', paytr_token);
+    console.log('Final Token:', token);
+    console.log('Test mode:', test_mode);
+    
+    // PayTR API'ye gönderilecek veriler
     const post_vals = {
         merchant_id: merchant_id,
-        user_ip: user_ip,
-        merchant_oid: merchant_oid,
+        merchant_key: merchant_key,
+        merchant_salt: merchant_salt,
         email: email,
         payment_amount: payment_amount,
-        paytr_token: paytr_token,
+        merchant_oid: merchant_oid,
+        user_name: user_name,
+        user_address: user_address,
+        user_phone: user_phone,
+        merchant_ok_url: merchant_ok_url,
+        merchant_fail_url: merchant_fail_url,
         user_basket: user_basket,
+        user_ip: user_ip,
+        timeout_limit: timeout_limit,
         debug_on: debug_on,
+        test_mode: test_mode,
+        lang: lang,
         no_installment: no_installment,
         max_installment: max_installment,
-        user_name: "DiyetUp User",
-        user_address: "Turkey",
-        user_phone: "5551234567",
-        merchant_ok_url: "https://diyetup.com/payment/success",
-        merchant_fail_url: "https://diyetup.com/payment/error",
-        timeout_limit: timeout_limit,
         currency: currency,
-        test_mode: test_mode,
-        lang: lang
+        paytr_token: token
     };
-    
-    console.log('PayTR Token oluşturuldu:', paytr_token);
-    console.log('Test mode:', test_mode);
-    console.log('Callback URLs:', {
-        success: "https://diyetup.com/payment/success",
-        fail: "https://diyetup.com/payment/error"
-    });
     
     res.json({
         success: true,
-        token: paytr_token,
+        token: token,
         merchant_oid: merchant_oid,
-        test_mode: false,
-        message: 'Canlı PayTR hesabı ile çalışıyor',
+        test_mode: test_mode,
+        message: 'PayTR token oluşturuldu',
         post_data: post_vals
     });
+});
+
+// PayTR Callback Route
+router.post('/api/payment/callback', (req, res) => {
+  console.log('PayTR Callback:', req.body);
+  
+  // PayTR'den gelen verileri kontrol et
+  const { merchant_oid, status, total_amount } = req.body;
+  
+  if (status === 'success') {
+    console.log('Ödeme başarılı:', merchant_oid);
+    // Burada veritabanında ödeme durumunu güncelle
+    res.send('OK');
+  } else {
+    console.log('Ödeme başarısız:', merchant_oid);
+    res.send('OK');
+  }
 });
 
 module.exports = router; 
