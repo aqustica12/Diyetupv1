@@ -14,7 +14,13 @@ app.use(helmet());
 app.use(compression());
 app.use(morgan('combined'));
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001', process.env.FRONTEND_URL].filter(Boolean),
+  origin: [
+    'http://localhost:3000', 
+    'http://localhost:3001', 
+    'https://diyetup.com',
+    'http://diyetup.com',
+    process.env.FRONTEND_URL
+  ].filter(Boolean),
   credentials: true
 }));
 

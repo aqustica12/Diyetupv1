@@ -22,14 +22,10 @@ router.post('/callback', (req, res) => {
 // PayTR token oluştur
 router.post('/create-token', (req, res) => {
     console.log('PayTR create-token çağrıldı');
-    console.log('Environment variables:', {
-        PAYTR_MERCHANT_ID: process.env.PAYTR_MERCHANT_ID,
-        PAYTR_MERCHANT_KEY: process.env.PAYTR_MERCHANT_KEY,
-        PAYTR_MERCHANT_SALT: process.env.PAYTR_MERCHANT_SALT
-    });
     
     const { amount, user_id, package_id } = req.body;
     
+    // Gerçek PayTR değerleri
     const merchant_id = process.env.PAYTR_MERCHANT_ID;
     const merchant_key = process.env.PAYTR_MERCHANT_KEY;
     const merchant_salt = process.env.PAYTR_MERCHANT_SALT;
@@ -45,6 +41,12 @@ router.post('/create-token', (req, res) => {
         });
     }
     
+    console.log('PayTR Config:', {
+        merchant_id,
+        merchant_key: merchant_key.substring(0, 10) + '...',
+        merchant_salt: merchant_salt.substring(0, 10) + '...'
+    });
+    
     const merchant_oid = Date.now().toString();
     const email = 'test@diyetup.com';
     const payment_amount = amount * 100; // Kuruş cinsinden
@@ -57,10 +59,10 @@ router.post('/create-token', (req, res) => {
         }
     ]);
     
-    const user_ip = req.ip;
+    const user_ip = req.ip || '127.0.0.1';
     const timeout_limit = 30;
     const debug_on = 1;
-    const test_mode = 1;
+    const test_mode = 0; // Canlı mod için 0
     const no_installment = 0;
     const max_installment = 0;
     const currency = "TL";
@@ -80,21 +82,30 @@ router.post('/create-token', (req, res) => {
         debug_on: debug_on,
         no_installment: no_installment,
         max_installment: max_installment,
-        user_name: "Test User",
-        user_address: "Test Address",
+        user_name: "DiyetUp User",
+        user_address: "Turkey",
         user_phone: "5551234567",
-        merchant_ok_url: "http://localhost:3000/payment/success",
-        merchant_fail_url: "http://localhost:3000/payment/error",
+        merchant_ok_url: "https://diyetup.com/payment/success",
+        merchant_fail_url: "https://diyetup.com/payment/error",
         timeout_limit: timeout_limit,
         currency: currency,
         test_mode: test_mode,
         lang: lang
     };
     
+    console.log('PayTR Token oluşturuldu:', paytr_token);
+    console.log('Test mode:', test_mode);
+    console.log('Callback URLs:', {
+        success: "https://diyetup.com/payment/success",
+        fail: "https://diyetup.com/payment/error"
+    });
+    
     res.json({
         success: true,
         token: paytr_token,
         merchant_oid: merchant_oid,
+        test_mode: false,
+        message: 'Canlı PayTR hesabı ile çalışıyor',
         post_data: post_vals
     });
 });
