@@ -29,6 +29,8 @@ export default function PaymentForm({
   });
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(1);
+  const [paytrToken, setPaytrToken] = useState('');
+  const [showPaytrIframe, setShowPaytrIframe] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -60,7 +62,7 @@ export default function PaymentForm({
     
     try {
       // PayTR token oluştur
-      const response = await fetch('http://localhost:5000/api/payment/create-token', {
+      const response = await fetch('https://diyetup.com/api/payment/create-token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -74,39 +76,64 @@ export default function PaymentForm({
       
       const data = await response.json();
       console.log('PayTR Response:', data);
-      console.log('Token:', data.token);
       
-      if (data.success) {
-        // PayTR iframe'i göster
-        const paytr_embed = document.createElement('iframe');
-        paytr_embed.src = `https://www.paytr.com/odeme/guvenli/${data.token}`;
-        paytr_embed.width = '100%';
-        paytr_embed.height = '600px';
-        paytr_embed.frameBorder = '0';
-        paytr_embed.scrolling = 'no';
-        
-        console.log('Iframe created:', paytr_embed);
-        
-        // Modal içeriğini değiştir
-        const modalContent = document.querySelector('.bg-white.rounded-lg');
-        console.log('Modal content found:', modalContent);
-        
-        if (modalContent) {
-          modalContent.innerHTML = '';
-          modalContent.appendChild(paytr_embed);
-          console.log('Iframe added to modal');
-        } else {
-          console.log('Modal content not found!');
-        }
+      if (data.success && data.token) {
+        console.log('PayTR token alındı:', data.token);
+        setPaytrToken(data.token);
+        setShowPaytrIframe(true);
+        console.log('iframe gösterilecek');
+      } else {
+        console.error('PayTR token alınamadı:', data);
+        alert('Ödeme işlemi başlatılamadı. Lütfen tekrar deneyin.');
       }
     } catch (error) {
       console.error('Ödeme hatası:', error);
+      alert('Ödeme işlemi sırasında hata oluştu. Backend çalışıyor mu?');
     } finally {
       setIsLoading(false);
     }
   };
 
   if (!isOpen) return null;
+
+  // PayTR iframe göster
+  if (showPaytrIframe && paytrToken) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-lg max-w-4xl w-full h-[80vh]"
+        >
+          <div className="flex items-center justify-between p-4 border-b">
+            <h2 className="text-xl font-bold text-gray-900">PayTR Güvenli Ödeme</h2>
+            <button
+              onClick={() => {
+                setShowPaytrIframe(false);
+                setPaytrToken('');
+                onClose();
+              }}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          
+          <div className="p-4 h-full">
+            <iframe
+              src={`https://www.paytr.com/odeme/guvenli/${paytrToken}`}
+              width="100%"
+              height="100%"
+              frameBorder="0"
+              scrolling="yes"
+              className="rounded-lg"
+              title="PayTR Ödeme"
+            />
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   if (step === 2) {
     return (
@@ -191,7 +218,7 @@ export default function PaymentForm({
 
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <div className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">PayTR</div>
+            <div className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">PAYTR</div>
           </div>
           <p className="text-gray-600">
             PayTR güvenli ödeme altyapısı ile ödemenizi tamamlayın
