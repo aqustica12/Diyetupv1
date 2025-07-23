@@ -45,7 +45,7 @@ router.post('/start', async (req, res) => {
     // PayTR ayarları
     const timeout_limit = 30;
     const debug_on = 1;
-    const test_mode = 1; // Test modu (gerçek ödemeler için 0 yap)
+    const test_mode = 0; // Test modu kapalı (gerçek ödemeler için)
     const no_installment = 0;
     const max_installment = 0;
     const currency = 'TL';

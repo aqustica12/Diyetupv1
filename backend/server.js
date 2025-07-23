@@ -7,7 +7,7 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Trust proxy for rate limiting
+// Trust proxy for rate limiting (VPS için gerekli)
 app.set('trust proxy', 1);
 
 // Middleware
