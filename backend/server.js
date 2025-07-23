@@ -1,18 +1,17 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const compression = require('compression');
-const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust proxy for rate limiting
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(helmet());
-app.use(compression());
-app.use(morgan('combined'));
 app.use(cors({
   origin: [
     'http://localhost:3000', 
@@ -36,15 +35,6 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/users', require('./routes/users'));
-app.use('/api/clients', require('./routes/clients'));
-app.use('/api/appointments', require('./routes/appointments'));
-app.use('/api/diet-plans', require('./routes/diet-plans'));
-app.use('/api/recipes', require('./routes/recipes'));
-app.use('/api/foods', require('./routes/foods'));
-app.use('/api/messages', require('./routes/messages'));
-app.use('/api/reports', require('./routes/reports'));
 app.use('/api/payment', require('./routes/payment'));
 
 // Health check
@@ -69,4 +59,5 @@ app.use('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server ${PORT} portunda çalışıyor`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
+  console.log(`💳 Payment endpoint: http://localhost:${PORT}/api/payment/start`);
 }); 
