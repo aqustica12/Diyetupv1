@@ -54,33 +54,53 @@ export default function PaymentForm({
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('handleSubmit çalıştı!');
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      // PayTR entegrasyonu simülasyonu
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // PayTR token oluştur
+      const response = await fetch('http://localhost:5000/api/payment/create-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: parseInt(planPrice.replace('₺', '')),
+          user_id: 1,
+          package_id: planId
+        })
+      });
       
-      if (step === 1) {
-        setStep(2);
-        setIsLoading(false);
-        return;
+      const data = await response.json();
+      console.log('PayTR Response:', data);
+      console.log('Token:', data.token);
+      
+      if (data.success) {
+        // PayTR iframe'i göster
+        const paytr_embed = document.createElement('iframe');
+        paytr_embed.src = `https://www.paytr.com/odeme/guvenli/${data.token}`;
+        paytr_embed.width = '100%';
+        paytr_embed.height = '600px';
+        paytr_embed.frameBorder = '0';
+        paytr_embed.scrolling = 'no';
+        
+        console.log('Iframe created:', paytr_embed);
+        
+        // Modal içeriğini değiştir
+        const modalContent = document.querySelector('.bg-white.rounded-lg');
+        console.log('Modal content found:', modalContent);
+        
+        if (modalContent) {
+          modalContent.innerHTML = '';
+          modalContent.appendChild(paytr_embed);
+          console.log('Iframe added to modal');
+        } else {
+          console.log('Modal content not found!');
+        }
       }
-      
-      // Ödeme başarılı
-      const paymentData = {
-        paymentMethod: 'PayTR',
-        paymentId: `paytr_${Date.now()}`,
-        cardLast4: formData.cardNumber.slice(-4),
-        amount: planPrice,
-        plan: planName
-      };
-      
-      onSuccess(paymentData);
-      onClose();
     } catch (error) {
-      console.error('Payment error:', error);
-      alert('Ödeme işlemi sırasında bir hata oluştu. Lütfen tekrar deneyin.');
+      console.error('Ödeme hatası:', error);
     } finally {
       setIsLoading(false);
     }
@@ -130,7 +150,10 @@ export default function PaymentForm({
               İptal
             </Button>
             <Button
-              onClick={handleSubmit}
+              onClick={(e) => {
+                e.preventDefault();
+                handleSubmit(e);
+              }}
               disabled={isLoading}
               className="bg-green-600 hover:bg-green-700 text-white"
             >

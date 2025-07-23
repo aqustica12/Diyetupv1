@@ -23,6 +23,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="tr">
+      <head>
+        <script src="https://www.paytr.com/js/iframeResizer.min.js"></script>
+      </head>
       <body className={inter.className}>
         <ToastProvider>
           <ToastContainer />

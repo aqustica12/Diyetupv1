@@ -14,7 +14,7 @@ app.use(helmet());
 app.use(compression());
 app.use(morgan('combined'));
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: ['http://localhost:3000', 'http://localhost:3001', process.env.FRONTEND_URL].filter(Boolean),
   credentials: true
 }));
 
@@ -39,6 +39,7 @@ app.use('/api/recipes', require('./routes/recipes'));
 app.use('/api/foods', require('./routes/foods'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/reports', require('./routes/reports'));
+app.use('/api/payment', require('./routes/payment'));
 
 // Health check
 app.get('/health', (req, res) => {
